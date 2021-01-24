@@ -281,13 +281,25 @@ if (detect) return
 (function(undefined) {
 
     // Detection from https://raw.githubusercontent.com/Financial-Times/polyfill-service/master/packages/polyfill-library/polyfills/DOMTokenList/detect.js
+    var detect = (
+      'DOMTokenList' in this && (function (x) {
+        return 'classList' in x ? !x.classList.toggle('x', false) && !x.className : true;
+      })(document.createElement('x'))
+    );
+
+    if (detect) return
 
     // Polyfill from https://raw.githubusercontent.com/Financial-Times/polyfill-service/master/packages/polyfill-library/polyfills/DOMTokenList/polyfill.js
     (function (global) {
       var nativeImpl = "DOMTokenList" in global && global.DOMTokenList;
 
       if (
-          true
+          !nativeImpl ||
+          (
+            !!document.createElementNS &&
+            !!document.createElementNS('http://www.w3.org/2000/svg', 'svg') &&
+            !(document.createElementNS("http://www.w3.org/2000/svg", "svg").classList instanceof DOMTokenList)
+          )
         ) {
         global.DOMTokenList = (function() { // eslint-disable-line no-unused-vars
           var dpSupport = true;
@@ -395,7 +407,6 @@ if (detect) return
             };
 
             that.add = function () {
-              console.log(arguments)
               preop.apply(that, args = arguments);
 
               for (var args, token, i = 0, l = args.length; i < l; ++i) {
@@ -478,7 +489,9 @@ if (detect) return
       // Add second argument to native DOMTokenList.toggle() if necessary
       (function () {
         var e = document.createElement('span');
+        if (!('classList' in e)) return;
         e.classList.toggle('x', false);
+        if (!e.classList.contains('x')) return;
         e.classList.constructor.prototype.toggle = function toggle(token /*, force*/) {
           var force = arguments[1];
           if (force === undefined) {
@@ -495,7 +508,9 @@ if (detect) return
       // Add multiple arguments to native DOMTokenList.add() if necessary
       (function () {
         var e = document.createElement('span');
+        if (!('classList' in e)) return;
         e.classList.add('a', 'b');
+        if (e.classList.contains('b')) return;
         var native = e.classList.constructor.prototype.add;
         e.classList.constructor.prototype.add = function () {
           var args = arguments;
@@ -509,9 +524,11 @@ if (detect) return
       // Add multiple arguments to native DOMTokenList.remove() if necessary
       (function () {
         var e = document.createElement('span');
+        if (!('classList' in e)) return;
         e.classList.add('a');
         e.classList.add('b');
         e.classList.remove('a', 'b');
+        if (!e.classList.contains('b')) return;
         var native = e.classList.constructor.prototype.remove;
         e.classList.constructor.prototype.remove = function () {
           var args = arguments;
@@ -677,7 +694,7 @@ if (detect) return
       }())
     );
 
-    // if (detect) return
+    if (detect) return
 
     // Polyfill from https://cdn.polyfill.io/v2/polyfill.js?features=Element.prototype.classList&flags=always
     (function (global) {
